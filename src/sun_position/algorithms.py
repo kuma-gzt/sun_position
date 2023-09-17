@@ -1,5 +1,5 @@
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import math
 import calendar
@@ -15,32 +15,69 @@ class SunPosition:
         self.is_daylight = is_daylight # boolean, is Daylight Saving Time
         # TODO put here? the constants for epochs
 
+
+
+        #print('juliandate: ' + str(round(juliandate,2)) +
+        #' right_asc: ' + str(round(right_asc,2)) +
+        #' declination: ' + str(round(declination,2)) +
+        #' azimuth: ' + str(round(azimuth,2)) +
+        #' altitude: ' + str(round(altitude,2)))
+
+
     def sun_position(self):
-        """Returns a tuple holding the azimuth and elevation angles of the sun"""
-        # TODO verify somewhere date_time is ISO format
+        """
+        Returns a dictionary holding the azimuth and altitude angles for
+        every day in the given year. Keys in the dictionary follows the format
+        0203 (Feb the 3rd).
+        :returns: a dictionary with 365/366 items
+        """
+        tmp = datetime.fromisoformat(self.date_time)
+        year_p = tmp.year
+        month_p = tmp.month
+        day_p = tmp.day
 
-        # Get date and time as a datetime Python object
-        dt_obj = datetime.fromisoformat(self.date_time)
+        positions = {}
+        firstday = datetime(year_p, 1, 1)
+        lastday = datetime(year_p, 12, 31)
+        alldays = [firstday + timedelta(days=x) for x in range((lastday - firstday).days + 1)]
 
-        year, month, day = self.__lct2ut(dt_obj, self.is_daylight, self.lon)
+        for dt_obj in alldays:
+            year, month, day_ = self.__lct2ut(dt_obj, self.is_daylight, self.lon)
+            day = int(day_)
+            #print('year, month, day: ' + str(year) + ', ' + str(month) + ', ' + str(day))
+            # TODO should we use the integer of day or true day?
 
-        numdays = self.__date2daynumber(year, month, day)
-        dse = self.__days_since_epoch(year, numdays)
-        juliandate = self.__juliandate(year, month, day)
-        sun_longitude = self.__sun_longitude(dse, juliandate)
-        right_asc, declination = self.__rightasc_declin(sun_longitude, juliandate)
-        azimuth, altitude = self.__azim_altit(right_asc, declination, self.lat,
-                                              self.lon, year, month, day)
-        #lst_r, lst_s = self.__riseset_times(right_asc, declination, self.lat)
+            azim_lst = []
+            alt_lst = []
 
-        print("year, month, day: " + str(year) + ", " + str(month) + ", " + str(day))
-        print("numdays: " + str(numdays))
-        print("D: " + str(dse))
-        print("juliandate: " + str(juliandate))
-        print("sun_longitude: " + str(sun_longitude))
-        print("right_asc, declin: " + str(right_asc) + ", " + str(declination))
-        print("azimuth, altitude: " + str(azimuth) + ", " + str(altitude))
-        #print("lst_r, lst_s: " + str(lst_r) + ", " + str(lst_s))
+            if month == month_p and day == day_p:
+                key = dt_obj.strftime('p%b%d')
+            else:
+                key = dt_obj.strftime('%b%d')
+
+            for i in range(0, 50):
+                dd = day + i/48
+                numdays = self.__date2daynumber(year, month, dd)
+                dse = self.__days_since_epoch(year, numdays)
+                juliandate = self.__juliandate(year, month, dd)
+                sun_longitude = self.__sun_longitude(dse, juliandate)
+                right_asc, declination = self.__rightasc_declin(sun_longitude,
+                                                                juliandate)
+                azimuth, altitude = self.__azim_altit(right_asc, declination,
+                                                    self.lat, self.lon, year,
+                                                    month, dd)
+                """ if altitude > 0:
+                    azim_lst.append(azimuth)
+                    alt_lst.append(altitude) """
+                azim_lst.append(azimuth)
+                alt_lst.append(altitude)
+
+            #print(azim_lst)
+            #print(key)
+            positions[key] = (azim_lst, alt_lst)
+        #print(months['0621'])
+
+        return positions
 
     def __date2daynumber(self, year, month, day):
         """Converts the date to date number"""
@@ -64,7 +101,7 @@ class SunPosition:
 
     def __days_since_epoch(self, year, numdays):
         """Gets the number of days since epoch 2010"""
-        
+
         d = 0
 
         if year > 2010:
@@ -102,10 +139,10 @@ class SunPosition:
         if wg > 360:
             wg = wg%360
 
-        print("T: " + str(t))
-        print("eg: " + str(eg))
-        print("wg: " + str(wg))
-        print("e: " + str(e))
+        #print("T: " + str(t))
+        #print("eg: " + str(eg))
+        #print("wg: " + str(wg))
+        #print("e: " + str(e))
 
         n = 360/365.242191*dse
 
@@ -133,8 +170,8 @@ class SunPosition:
         if true_anomaly < 0:
             true_anomaly = true_anomaly + 360
 
-        print("mean_anomaly: " + str(mean_anomaly))
-        print("true_anomaly: " + str(true_anomaly))
+        #print("mean_anomaly: " + str(mean_anomaly))
+        #print("true_anomaly: " + str(true_anomaly))
 
         sun_longitude = true_anomaly + wg
 
@@ -183,14 +220,14 @@ class SunPosition:
 
         gst = self.__ut2gst(year, month, day)
 
-        lst = gst + longitude/15.0
+        lst = gst + longitude/15
 
         if lst < 0:
             lst = lst + 24
         elif lst > 24:
             lst = lst - 24
 
-        h = lst - right_asc/15.0
+        h = lst - right_asc/15
 
         if h < 0:
             h = h + 24
@@ -226,7 +263,7 @@ class SunPosition:
     def __riseset_times(self, right_asc, declin, latitude):
         """Calculates rise and set times in Local Sidereal Time (LST)"""
 
-        alpha = right_asc/15.0
+        alpha = right_asc/15
         tan_lat = math.tan(math.radians(latitude))
         tan_decl = math.tan(math.radians(-1*declin))
 
@@ -237,7 +274,7 @@ class SunPosition:
 
         lst_s = alpha + math.acos(-1*tan_lat*tan_decl)/15
 
-        alpha = right_asc/15.0
+        alpha = right_asc/15
         sin_decl = math.sin(math.radians(declin))
         tan_decl = math.tan(math.radians(declin))
         cos_lat = math.cos(math.radians(latitude))
@@ -368,6 +405,6 @@ class SunPosition:
         return gst
 
 #test = SunPosition(51.48, 0, "2003-07-27T00:00:00", True)
-test = SunPosition(38, -78, "2015-02-05T12:00:00", False)
+#test = SunPosition(38, -78, "2015-02-05T12:00:00", False)
 #test = SunPosition(51.48, 0, "1988-07-27T00:00:00", False)
-test.sun_position()
+#test.sun_pos_day()
