@@ -1,6 +1,6 @@
 """This module holds configuration variables for the charts"""
 
-# figure size in inches 
+# figure size in inches
 fig_zize = {'width': 8, 'height': 8}
 
 # line symbol and labels for equinoxes and solstices
