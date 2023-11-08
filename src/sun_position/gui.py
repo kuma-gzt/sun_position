@@ -1,4 +1,4 @@
-"""This module contains Tkinter GUI code for the package."""
+"""This module contains the Tkinter GUI code."""
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -37,6 +37,9 @@ class SunPathGUI():
         self.daylight = tk.StringVar()
         self.latitude = tk.StringVar(value='35')
         self.longitude = tk.StringVar(value='-105')
+        self.obs_elev = tk.StringVar(value='0')
+        self.press = tk.StringVar(value='')
+        self.temp = tk.StringVar(value='')
         self.hz_chart = tk.StringVar(value=1)
         self.vt_chart = tk.StringVar(value=1)
         self.data = tk.StringVar()
@@ -119,6 +122,33 @@ class SunPathGUI():
                                          validatecommand=self.val.lon_vcmd,
                                          invalidcommand=self.val.lon_ivcmd)
 
+        # observer elevation
+        self.obs_elev_lbl = ttk.Label(self.other_lbl_frame,
+                                      text='Observer elevation (meters): ')
+        self.obs_elev_entry = ttk.Entry(self.other_lbl_frame,
+                                        textvariable=self.obs_elev, width=10,
+                                        validate='focusout',
+                                        validatecommand=self.val.obs_elev_vcmd,
+                                        invalidcommand=self.val.obs_elev_ivcmd)
+
+        # pressure
+        self.press_lbl = ttk.Label(self.other_lbl_frame,
+                                   text='Annual avg local pressure (mbars): ')
+        self.press_entry = ttk.Entry(self.other_lbl_frame,
+                                     textvariable=self.press, width=10,
+                                     validate='focusout',
+                                     validatecommand=self.val.press_vcmd,
+                                     invalidcommand=self.val.press_ivcmd)
+
+        # temp
+        self.temp_lbl = ttk.Label(self.other_lbl_frame,
+                                  text='Annual avg local temperature (°C): ')
+        self.temp_entry = ttk.Entry(self.other_lbl_frame,
+                                    textvariable=self.temp, width=10,
+                                    validate='focusout',
+                                    validatecommand=self.val.temp_vcmd,
+                                    invalidcommand=self.val.temp_ivcmd)
+
         # output
         self.hz_chart_chkbox = ttk.Checkbutton(self.output_lbl_frame,
                                                text='Plot horizontal sun path',
@@ -141,7 +171,7 @@ class SunPathGUI():
         self.title_entry = ttk.Entry(self.output_lbl_frame,
                                      textvariable=self.title, width=45)
         self.outputdir_btn = ttk.Button(self.output_lbl_frame,
-                                        text='Browse output directory',
+                                        text='Select output directory',
                                         command=self.__output_directory)
         self.outputdir_lbl = ttk.Label(self.output_lbl_frame,
                                        textvariable=self.outputdir, width=45)
@@ -161,13 +191,17 @@ class SunPathGUI():
     def __create_lbl_frames(self):
         """Create label frames"""
         self.date_lbl_frame = ttk.LabelFrame(self.main_window,
-                                             text='Date and Time',
+                                             text='Date and time',
                                              labelanchor='nw',
                                              padding=5)
         self.location_lbl_frame = ttk.LabelFrame(self.main_window,
                                                  text='Location',
                                                  labelanchor='nw',
                                                  padding=5)
+        self.other_lbl_frame = ttk.LabelFrame(self.main_window,
+                                              text='Other parameters (not mandatory)',
+                                              labelanchor='nw',
+                                              padding=5)
         self.output_lbl_frame = ttk.LabelFrame(self.main_window,
                                                text='Output',
                                                labelanchor='nw',
@@ -211,39 +245,53 @@ class SunPathGUI():
         self.longitude_lbl.grid(column=2, row=3, sticky='E', padx=(46, 1))
         self.longitude_entry.grid(column=3, row=3, sticky='W')
 
+        # observers elevation
+        self.obs_elev_lbl.grid(column=0, row=4, sticky='E')
+        self.obs_elev_entry.grid(column=1, row=4, sticky='W')
+
+        # pressure
+        self.press_lbl.grid(column=0, row=5, sticky='E')
+        self.press_entry.grid(column=1, row=5, sticky='W')
+
+        # temperature
+        self.temp_lbl.grid(column=0, row=6, sticky='E')
+        self.temp_entry.grid(column=1, row=6, sticky='W')
+
         # title
-        self.title_entry.grid(column=0, row=4, sticky='W')
+        self.title_entry.grid(column=0, row=7, sticky='W')
 
         # horizontal checkbox
-        self.hz_chart_chkbox.grid(column=0, row=5, sticky='W', pady=(10, 5))
+        self.hz_chart_chkbox.grid(column=0, row=8, sticky='W', pady=(10, 5))
 
         # vertical checkbox
-        self.vt_chart_chkbox.grid(column=0, row=6, sticky='W', pady=(0, 5))
+        self.vt_chart_chkbox.grid(column=0, row=9, sticky='W', pady=(0, 5))
 
         # data checkbox
-        self.data_chkbox.grid(column=0, row=7, sticky='W', pady=(0, 10))
+        self.data_chkbox.grid(column=0, row=10, sticky='W', pady=(0, 10))
 
         # output directory
-        self.outputdir_btn.grid(column=0, row=8, sticky='W', pady=(0, 10))
-        self.outputdir_lbl.grid(column=0, row=9, sticky='W')
+        self.outputdir_btn.grid(column=0, row=11, sticky='W', pady=(0, 10))
+        self.outputdir_lbl.grid(column=0, row=12, sticky='W')
 
         # buttons
-        self.quit_button.grid(column=0, row=10, padx=5, pady=(15, 5),
+        self.quit_button.grid(column=0, row=13, padx=5, pady=(15, 5),
                               sticky='WE')
-        self.getcharts_button.grid(column=1, row=10, padx=5, pady=(15, 5),
+        self.getcharts_button.grid(column=1, row=13, padx=5, pady=(15, 5),
                                    sticky='WE')
 
         # label frames
-        self.date_lbl_frame.grid(column=0, row=1, padx=5, pady=(15, 15),
+        self.date_lbl_frame.grid(column=0, row=1, padx=5, pady=(10, 10),
                                  sticky='WE')
-        self.location_lbl_frame.grid(column=0, row=2, padx=5, pady=(15, 15),
+        self.location_lbl_frame.grid(column=0, row=2, padx=5, pady=(10, 10),
                                      sticky='WE')
-        self.output_lbl_frame.grid(column=0, row=3, padx=5, pady=(15, 15),
+        self.other_lbl_frame.grid(column=0, row=3, padx=5, pady=(10, 10),
+                                  sticky='WE')
+        self.output_lbl_frame.grid(column=0, row=4, padx=5, pady=(10, 10),
                                    sticky='WE')
 
         # frames
         #self.intro_frame.grid(column=0, row=0, padx=5, pady=5, sticky='WE')
-        self.button_frame.grid(column=0, row=4, padx=10, pady=(35, 10),
+        self.button_frame.grid(column=0, row=5, padx=10, pady=(35, 10),
                                sticky='E')
 
     def __output_directory(self):
@@ -261,12 +309,16 @@ class SunPathGUI():
         daylight = self.daylight.get()
         lat = float(self.latitude.get())
         lon = float(self.longitude.get())
+        obs_elev = float(self.obs_elev.get())
+        press = float(self.press.get())
+        temp = float(self.temp.get())
         title = self.title.get()
         path = self.outputdir.get()
 
         # test for date and time correctness
-        tmp = [self.val.year_validation(year), self.val.month_validation(month),
-               self.val.day_validation(day), self.val.hour_validation(hour),
+        tmp = [self.val.year_validation(year),
+               self.val.month_validation(month), self.val.day_validation(day),
+               self.val.hour_validation(hour),
                self.val.minute_validation(minute)]
 
         if not all(tmp):
@@ -274,7 +326,7 @@ class SunPathGUI():
             return
         else:
             try:
-                # second is zero
+                # seconds are zero
                 dt = datetime.datetime(year, month, day, hour, minute, 0,
                                        True if daylight == 1 else False)
             except:
@@ -289,11 +341,15 @@ class SunPathGUI():
             self.val.error_msgbox('Invalid coordinate values', '')
             return
 
-        sunpos = SunPosition(lat, lon, dt.isoformat(), daylight)
+        sunpos = SunPosition(lat, lon, dt.isoformat(), daylight, obs_elev,
+                             press, temp)
         horizon_coords = sunpos.sun_position()
         plot = PlotSunPath(horizon_coords, title, lat, lon,
                            dt.strftime('%Y-%b-%d'), path)
         plot.plot_diagrams()
+
+        self, lat, lon, date_time, is_daylight, obs_elev, press,
+                 temp)
 
 
 class GUIValidation():
@@ -332,6 +388,21 @@ class GUIValidation():
         # longitude
         self.lon_vcmd = (self.main_window.register(self.lon_validation), '%P')
         self.lon_ivcmd = (self.main_window.register(self.on_lon_invalid),)
+
+        # observer elevation
+        self.obs_elev_vcmd = (self.main_window.register(self.obs_elev_validation),
+                              '%P')
+        self.obs_elev_ivcmd = (self.main_window.register(self.on_obs_elev_invalid),)
+
+        # pressure
+        self.press_vcmd = (self.main_window.register(self.press_validation),
+                           '%P')
+        self.press_ivcmd = (self.main_window.register(self.on_press_invalid),)
+
+        # temperature
+        self.temp_vcmd = (self.main_window.register(self.temp_validation),
+                          '%P')
+        self.temp_ivcmd = (self.main_window.register(self.on_temp_invalid),)
 
     def year_validation(self, year):
         """Validate the year"""
@@ -409,6 +480,39 @@ class GUIValidation():
         """On invalid longitude"""
         self.error_msgbox('Invalid longitude value',
                           'Longitudes must be in the range -180 to 180')
+
+    def obs_elev_validation(self, obs_elev):
+        """Validate the observer elevation"""
+        if float(obs_elev) < -420 or float(obs_elev) > 8850:
+            return False
+        return True
+
+    def on_obs_elev_invalid(self):
+        """On invalid observer elevation"""
+        self.error_msgbox('Invalid observer elevation value',
+                          'Elevation must be in the range -420 to 8850 meters')
+
+    def press_validation(self, press):
+        """Validate the atmospheric pressure"""
+        if float(press) < 850 or float(press) > 1090:
+            return False
+        return True
+
+    def on_press_invalid(self):
+        """On invalid atmospheric pressure"""
+        self.error_msgbox('Invalid atmospheric pressure value',
+                          'Atmospheric pressure must be in the range 850 to 1090 mbars')
+
+    def temp_validation(self, temp):
+        """Validate the temperature"""
+        if float(temp) < -90 or float(temp) > 57:
+            return False
+        return True
+
+    def on_temp_invalid(self):
+        """On invalid temperature"""
+        self.error_msgbox('Invalid temperature value',
+                          'Atmospheric pressure must be in the range -90 to 57 C')
 
     def error_msgbox(self, message, detail):
         """Error message box"""
