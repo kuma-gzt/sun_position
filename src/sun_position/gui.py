@@ -34,6 +34,7 @@ class SunPathGUI():
         self.day = tk.StringVar(value=dt.day)
         self.hour = tk.StringVar(value=dt.hour)
         self.minute = tk.StringVar(value=dt.minute)
+        self.timezone = tk.StringVar()
         self.daylight = tk.StringVar()
         self.latitude = tk.StringVar(value='35')
         self.longitude = tk.StringVar(value='-105')
@@ -97,9 +98,23 @@ class SunPathGUI():
                                        validatecommand=self.val.minute_vcmd,
                                        invalidcommand=self.val.minute_ivcmd)
 
+        # time zone
+        self.timezone_lbl = ttk.Label(self.date_lbl_frame, text='Time zone: ')
+        ut = ('-12', '-11.5', '-11', '-10.5', '-10', '-9.5', '-9', '-8.5',
+              '-8', '-7.5', '-7', '-6.5', '-6', '-5.5', '-5', '-4.5', '-4',
+              '-3.5', '-3', '-2.5', '-2', '-1.5', '-1', '-0.5', '0', '+0.5',
+              '+1', '+1.5', '+2', '+2.5', '+3', '+3.5', '+4', '+4.5', '+5',
+              '+5.5', '+6', '+6.5', '+7', '+7.5', '+8', '+8.5', '+9', '+9.5',
+              '+10', '+10.5', '+11', '+11.5', '+12')
+        self.timezone_dropdown = ttk.Combobox(self.date_lbl_frame,
+                                              textvariable=self.timezone,
+                                              state='readonly', justify='left',
+                                              width=5, values=ut)
+        self.timezone_dropdown.current(24)
+
         # daylight
         self.daylight_chkbox = ttk.Checkbutton(self.date_lbl_frame,
-                                               text='DST',
+                                               text='Daylight Saving Time',
                                                variable=self.daylight,
                                                onvalue=1,
                                                offvalue=0)
@@ -217,12 +232,12 @@ class SunPathGUI():
         self.year_spin.grid(column=1, row=1, sticky='W', pady=(0, 10))
 
         # month
-        self.month_lbl.grid(column=2, row=1, sticky='E', padx=(30, 1),
+        self.month_lbl.grid(column=2, row=1, sticky='E', padx=(10, 1),
                             pady=(0, 10))
         self.month_spin.grid(column=3, row=1, sticky='W', pady=(0, 10))
 
         # day
-        self.day_lbl.grid(column=4, row=1, sticky='E', padx=(30, 1),
+        self.day_lbl.grid(column=4, row=1, sticky='E', padx=(10, 1),
                           pady=(0, 10))
         self.day_spin.grid(column=5, row=1, sticky='W', pady=(0, 10))
 
@@ -234,49 +249,54 @@ class SunPathGUI():
         self.minute_lbl.grid(column=2, row=2, sticky='E', padx=(10, 1))
         self.minute_spin.grid(column=3, row=2, sticky='W')
 
+        # time zone
+        self.timezone_lbl.grid(column=4, row=2, sticky='E', padx=(10, 1),
+                               pady=(10, 10))
+        self.timezone_dropdown.grid(column=5, row=2, sticky='W', pady=(10, 10))
+
         # daylight
-        self.daylight_chkbox.grid(column=5, row=2, sticky='E')
+        self.daylight_chkbox.grid(column=1, row=3, sticky='W', columnspan=3)
 
         # latitude
-        self.latitude_lbl.grid(column=0, row=3, sticky='E')
-        self.latitude_entry.grid(column=1, row=3, sticky='W')
+        self.latitude_lbl.grid(column=0, row=4, sticky='E')
+        self.latitude_entry.grid(column=1, row=4, sticky='W')
 
         # longitude
-        self.longitude_lbl.grid(column=2, row=3, sticky='E', padx=(46, 1))
-        self.longitude_entry.grid(column=3, row=3, sticky='W')
+        self.longitude_lbl.grid(column=2, row=4, sticky='E', padx=(46, 1))
+        self.longitude_entry.grid(column=3, row=4, sticky='W')
 
         # observers elevation
-        self.obs_elev_lbl.grid(column=0, row=4, sticky='E')
-        self.obs_elev_entry.grid(column=1, row=4, sticky='W')
+        self.obs_elev_lbl.grid(column=0, row=5, sticky='E', pady=(10, 10))
+        self.obs_elev_entry.grid(column=1, row=5, sticky='W')
 
         # pressure
-        self.press_lbl.grid(column=0, row=5, sticky='E')
-        self.press_entry.grid(column=1, row=5, sticky='W')
+        self.press_lbl.grid(column=0, row=6, sticky='E', pady=(0, 10))
+        self.press_entry.grid(column=1, row=6, sticky='W')
 
         # temperature
-        self.temp_lbl.grid(column=0, row=6, sticky='E')
-        self.temp_entry.grid(column=1, row=6, sticky='W')
+        self.temp_lbl.grid(column=0, row=7, sticky='E', pady=(0, 10))
+        self.temp_entry.grid(column=1, row=7, sticky='W')
 
         # title
-        self.title_entry.grid(column=0, row=7, sticky='W')
+        self.title_entry.grid(column=0, row=8, sticky='W')
 
         # horizontal checkbox
-        self.hz_chart_chkbox.grid(column=0, row=8, sticky='W', pady=(10, 5))
+        self.hz_chart_chkbox.grid(column=0, row=9, sticky='W', pady=(10, 5))
 
         # vertical checkbox
-        self.vt_chart_chkbox.grid(column=0, row=9, sticky='W', pady=(0, 5))
+        self.vt_chart_chkbox.grid(column=0, row=10, sticky='W', pady=(0, 5))
 
         # data checkbox
-        self.data_chkbox.grid(column=0, row=10, sticky='W', pady=(0, 10))
+        self.data_chkbox.grid(column=0, row=11, sticky='W', pady=(0, 10))
 
         # output directory
-        self.outputdir_btn.grid(column=0, row=11, sticky='W', pady=(0, 10))
-        self.outputdir_lbl.grid(column=0, row=12, sticky='W')
+        self.outputdir_btn.grid(column=0, row=12, sticky='W', pady=(0, 10))
+        self.outputdir_lbl.grid(column=0, row=13, sticky='W')
 
         # buttons
-        self.quit_button.grid(column=0, row=13, padx=5, pady=(15, 5),
+        self.quit_button.grid(column=0, row=14, padx=5, pady=(15, 5),
                               sticky='WE')
-        self.getcharts_button.grid(column=1, row=13, padx=5, pady=(15, 5),
+        self.getcharts_button.grid(column=1, row=14, padx=5, pady=(15, 5),
                                    sticky='WE')
 
         # label frames
@@ -306,6 +326,7 @@ class SunPathGUI():
         day = int(self.day.get())
         hour = int(self.hour.get())
         minute = int(self.minute.get())
+        timezone = self.timezone.get()
         daylight = self.daylight.get()
         lat = float(self.latitude.get())
         lon = float(self.longitude.get())
@@ -347,9 +368,6 @@ class SunPathGUI():
         plot = PlotSunPath(horizon_coords, title, lat, lon,
                            dt.strftime('%Y-%b-%d'), path)
         plot.plot_diagrams()
-
-        self, lat, lon, date_time, is_daylight, obs_elev, press,
-                 temp)
 
 
 class GUIValidation():
