@@ -11,11 +11,12 @@ import config as cfg
 
 class PlotSunPath:
     """This class will plot the horizontal and vertical sun-path diagrams"""
-    def __init__(self, horizon_coords, title, lat, lon, date, path):
+    def __init__(self, horizon_coords, title, lat, lon, timezone, date, path):
         self.horizon_coords = horizon_coords
         self.title = title
         self.lat = lat
         self.lon = lon
+        self.timezone = timezone
         self.date = date
         self.path = path
 
@@ -40,8 +41,10 @@ class PlotSunPath:
 
         for key, value in chart_data.items():
             if key[0] == 'p':
+                azim = value[0]
+                alt = value[1]
                 # plot user curve
-                ax.plot([degrees(i) for i in value[0]], value[1],
+                ax.plot([degrees(i) for i in azim], alt,
                         color=cfg.user_symb['color'],
                         linewidth=cfg.user_symb['linewidth'])
                 # line and label for legend
@@ -59,16 +62,19 @@ class PlotSunPath:
                 # plot hour labels
                 for item in value:
                     if item[0] == 'Jun21':
-                        for j in range(0, len(item[1])):
+                        # range starts at 1 so we don't plot the 25th hour
+                        for j in range(1, len(item[1])):
                             ax.annotate(item[3][j],
                                         xy=(degrees(item[1][j]), item[2][j]),
-                                        xytext=cfg.hour_symb['xytext'],
+                                        xytext=cfg.hour_symb_lat_pos['xytext'],
                                         textcoords='offset points',
-                                        color=cfg.hour_symb['color'],
-                                        size=cfg.hour_symb['size'])
+                                        color=cfg.hour_symb_lat_pos['color'],
+                                        size=cfg.hour_symb_lat_pos['size'])
             else:
+                azim = value[0]
+                alt = value[1]
                 # plot equinoxes and solstices curves
-                ax.plot([degrees(i) for i in value[0]], value[1],
+                ax.plot([degrees(i) for i in azim], alt,
                         color=cfg.equisols_symb['color'],
                         linewidth=cfg.equisols_symb['linewidth'],
                         linestyle=cfg.equisols[key][0])
@@ -109,7 +115,7 @@ class PlotSunPath:
         plt.show()
 
     def __horizontal_sunpath(self, chart_data):
-        """Plots the horizonatl sun-path diagram"""
+        """Plots the horizontal sun-path diagram"""
         fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
         fig.set_size_inches(cfg.fig_zize['width'], cfg.fig_zize['height'])
 
@@ -123,9 +129,13 @@ class PlotSunPath:
 
         for key, value in chart_data.items():
             if key[0] == 'p':
+                # calculate the revised azimuth and altitude
+                azim, alt = self.__revised_azim_alt(value[0], value[1],
+                                                    self.lat)
                 # plot user's curve
-                ax.plot(value[0], value[1], color=cfg.user_symb['color'],
+                ax.plot(azim, alt, color=cfg.user_symb['color'],
                         linewidth=cfg.user_symb['linewidth'])
+
                 # line and label for legend
                 lines.append(matplotlib.lines.Line2D([0], [0],
                              color=cfg.user_symb['color']))
@@ -144,16 +154,35 @@ class PlotSunPath:
                             linewidth=cfg.ana_symb['linewidth'])
                 # plot hour labels
                 for item in value:
-                    if item[0] == 'Jun21':
-                        for j in range(0, len(item[1])):
-                            ax.annotate(item[3][j], xy=(item[1][j], item[2][j]),
-                                        xytext=cfg.hour_symb['xytext'],
+                    if item[0] == 'Dec21' and self.lat >= 0:
+                        # range starts at 1 so we don't plot the 25th hour
+                        for j in range(1, len(item[1])):
+                            ax.annotate(item[3][j],
+                                        xy=(item[1][j], item[2][j]),
+                                        xytext=cfg.hour_symb_lat_pos['xytext'],
                                         textcoords='offset points',
-                                        color=cfg.hour_symb['color'],
-                                        size=cfg.hour_symb['size'])
+                                        color=cfg.hour_symb_lat_pos['color'],
+                                        size=cfg.hour_symb_lat_neg['size'])
+                    if item[0] == 'Jun21' and self.lat < 0:
+                        # range starts at 1 so we don't plot the 25th hour
+                        for j in range(1, len(item[1])):
+                            ax.annotate(item[3][j],
+                                        xy=(item[1][j], item[2][j]),
+                                        xytext=cfg.hour_symb_lat_neg['xytext'],
+                                        textcoords='offset points',
+                                        color=cfg.hour_symb_lat_neg['color'],
+                                        size=cfg.hour_symb_lat_neg['size'])
+            elif key == 'Mar21':
+                # calculate the revised azimuth and altitude
+                azim, alt = self.__revised_azim_alt(value[0], value[1],
+                                                    self.lat)
+                ax.plot(azim, alt, color=cfg.equisols_symb['color'],
+                        linewidth=cfg.equisols_symb['linewidth'],
+                        linestyle=cfg.equisols[key][0])
             else:
-                # plot equinoxes and solstices curves
-                ax.plot(value[0], value[1], color=cfg.equisols_symb['color'],
+                azim = value[0]
+                alt = value[1]
+                ax.plot(azim, alt, color=cfg.equisols_symb['color'],
                         linewidth=cfg.equisols_symb['linewidth'],
                         linestyle=cfg.equisols[key][0])
 
@@ -165,7 +194,8 @@ class PlotSunPath:
         ax.set_rmin(90)
         r_ticks, r_labels = self.__get_yticks(10, 81, 10)
         ax.set_rgrids(r_ticks, r_labels, angle=cfg.grid_symb['angle'],
-                      color=cfg.grid_symb['color3'], size=cfg.grid_symb['size'])
+                      color=cfg.grid_symb['color3'],
+                      size=cfg.grid_symb['size'])
 
         theta_ticks, theta_labels = self.__get_xticks(0, 360, 15)
         ax.set_thetagrids(theta_ticks, theta_labels,
@@ -196,13 +226,6 @@ class PlotSunPath:
             azimuths = value[0]
             altitudes = value[1]
 
-            # TODO verify the correctdness of formula below
-            off_ut = round(self.lon/15)
-
-            # get the coordinates for whole hours
-            azims, alts, hours = self.__get_hours(azimuths, altitudes, off_ut)
-            whole_hours.append((key, azims, alts, hours))
-
             if key in key_dates:
                 # convert azimuth degrees to radians
                 azimuth_rad = [radians(i) for i in azimuths]
@@ -214,9 +237,37 @@ class PlotSunPath:
                 azimuth_rad = [radians(i) for i in azimuths]
                 chart_data[key] = (azimuth_rad, altitudes)
 
+            off_ut = int(self.timezone)
+
+            # get the coordinates for whole hours
+            azims, alts, hours = self.__get_hours(azimuths, altitudes, off_ut)
+            whole_hours.append((key, azims, alts, hours))
+
         chart_data['hours'] = whole_hours
 
         return chart_data
+
+    def __revised_azim_alt(self, azim, alt, lat):
+        """For latitudes between -5 and 5 degrees there is a line that plots
+        inside the circle. This method adds new coordinates to move this line
+        off the circle plot"""
+        if lat > -5 and lat < 5:
+            if lat >= 0:
+                min_alt = min(alt)
+                min_alt_index = alt.index(min_alt)
+                azim.insert(min_alt_index + 1, 5.5)  # ~315 degrees
+                alt.insert(min_alt_index + 1, -89)
+                azim.insert(min_alt_index + 2, 6.27)  # ~360 degrees
+                alt.insert(min_alt_index + 2, -89)
+            else:
+                min_alt = min(alt)
+                min_alt_index = alt.index(min_alt)
+                azim.insert(min_alt_index + 1, 3.92)  # ~225 degrees
+                alt.insert(min_alt_index + 1, -89)
+                azim.insert(min_alt_index + 2, 3.14)  # ~180 degrees
+                alt.insert(min_alt_index + 2, -89)
+
+        return azim, alt
 
     def __get_hours(self, azimuths, altitudes, off_ut):
         """Calculate whole hours positions"""
@@ -224,22 +275,29 @@ class PlotSunPath:
         alts = []
         hours = []
 
-        count = off_ut
+        count = off_ut - 1
         for i in azimuths:
             index = azimuths.index(i)
-            if index % 2 == 0:
-                count = count + 1
-                azims.append(i)
-                alts.append(altitudes[index])
-                hours.append(count)
+            if count == 24:
+                count = 0
+            count = count + 1
+            azims.append(radians(i))
+            alts.append(altitudes[index])
+            hours.append(count)
+        # for i in azimuths:
+        #     index = azimuths.index(i)
+        #     if index % 2 == 0:
+        #         count = count + 1
+        #         azims.append(radians(i))
+        #         alts.append(altitudes[index])
+        #         hours.append(count)
 
-        azims_ = [radians(i) for i in azims]
-        return azims_, alts, hours
+        return azims, alts, hours
 
     def __get_analemmas(self, hours):
         """Get the analemma coordinates"""
-        min_hour = 25
-        max_hour = -1
+        min_hour = 24
+        max_hour = 0
 
         for i in hours:
             if min(i[3]) < min_hour:
