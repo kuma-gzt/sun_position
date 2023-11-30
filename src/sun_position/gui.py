@@ -5,7 +5,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import datetime
-from algorithms import SunPosition
+from algorithms_spa import SunPosition
 from charting import PlotSunPath
 
 
@@ -36,15 +36,16 @@ class SunPathGUI():
         self.minute = tk.StringVar(value=dt.minute)
         self.timezone = tk.StringVar()
         self.daylight = tk.StringVar()
-        self.latitude = tk.StringVar(value='35')
-        self.longitude = tk.StringVar(value='-105')
-        self.obs_elev = tk.StringVar(value='0')
+        self.latitude = tk.StringVar(value='51.05')
+        self.longitude = tk.StringVar(value='-114.08')
+        self.obs_elev = tk.StringVar(value='')
         self.press = tk.StringVar(value='')
         self.temp = tk.StringVar(value='')
+        self.title = tk.StringVar(value='Chart title')
         self.hz_chart = tk.StringVar(value=1)
         self.vt_chart = tk.StringVar(value=1)
-        self.data = tk.StringVar()
-        self.title = tk.StringVar(value='Chart title')
+        self.plt_point = tk.StringVar(value=0)
+        self.csv_data = tk.StringVar(value=0)
         self.outputdir = tk.StringVar(value=os.path.expanduser('~'))
 
     def __create_widgets(self):
@@ -52,7 +53,7 @@ class SunPathGUI():
 
         self.val = GUIValidation(self.main_window)
 
-        # intro
+        # intro (not used)
         intro_txt = 'Sun-Path Charts Parameters'
         self.intro_lbl = ttk.Label(self.intro_frame, text=intro_txt,
                                    font=("TkDefaultFont", 12),
@@ -92,25 +93,22 @@ class SunPathGUI():
 
         # minute
         self.minute_lbl = ttk.Label(self.date_lbl_frame, text='Minute: ')
-        self.minute_spin = ttk.Spinbox(self.date_lbl_frame, from_=1, to=59,
+        self.minute_spin = ttk.Spinbox(self.date_lbl_frame, from_=0, to=59,
                                        increment=1, textvariable=self.minute,
                                        width=3, validate='focusout',
                                        validatecommand=self.val.minute_vcmd,
                                        invalidcommand=self.val.minute_ivcmd)
 
         # time zone
-        self.timezone_lbl = ttk.Label(self.date_lbl_frame, text='Time zone: ')
-        ut = ('-12', '-11.5', '-11', '-10.5', '-10', '-9.5', '-9', '-8.5',
-              '-8', '-7.5', '-7', '-6.5', '-6', '-5.5', '-5', '-4.5', '-4',
-              '-3.5', '-3', '-2.5', '-2', '-1.5', '-1', '-0.5', '0', '+0.5',
-              '+1', '+1.5', '+2', '+2.5', '+3', '+3.5', '+4', '+4.5', '+5',
-              '+5.5', '+6', '+6.5', '+7', '+7.5', '+8', '+8.5', '+9', '+9.5',
-              '+10', '+10.5', '+11', '+11.5', '+12')
+        self.timezone_lbl = ttk.Label(self.date_lbl_frame, text='UTC: ')
+        ut = ('-12', '-11', '-10', '-9', '-8', '-7', '-6', '-5', '-4', '-3',
+              '-2', '-1', '0', '+1', '+2', '+3', '+4', '+5', '+6', '+7', '+8',
+              '+9', '+10', '+11', '+12')
         self.timezone_dropdown = ttk.Combobox(self.date_lbl_frame,
                                               textvariable=self.timezone,
                                               state='readonly', justify='left',
                                               width=5, values=ut)
-        self.timezone_dropdown.current(24)
+        self.timezone_dropdown.current(6)
 
         # daylight
         self.daylight_chkbox = ttk.Checkbutton(self.date_lbl_frame,
@@ -141,7 +139,7 @@ class SunPathGUI():
         self.obs_elev_lbl = ttk.Label(self.other_lbl_frame,
                                       text='Observer elevation (meters): ')
         self.obs_elev_entry = ttk.Entry(self.other_lbl_frame,
-                                        textvariable=self.obs_elev, width=10,
+                                        textvariable=self.obs_elev, width=11,
                                         validate='focusout',
                                         validatecommand=self.val.obs_elev_vcmd,
                                         invalidcommand=self.val.obs_elev_ivcmd)
@@ -150,7 +148,7 @@ class SunPathGUI():
         self.press_lbl = ttk.Label(self.other_lbl_frame,
                                    text='Annual avg local pressure (mbars): ')
         self.press_entry = ttk.Entry(self.other_lbl_frame,
-                                     textvariable=self.press, width=10,
+                                     textvariable=self.press, width=11,
                                      validate='focusout',
                                      validatecommand=self.val.press_vcmd,
                                      invalidcommand=self.val.press_ivcmd)
@@ -159,7 +157,7 @@ class SunPathGUI():
         self.temp_lbl = ttk.Label(self.other_lbl_frame,
                                   text='Annual avg local temperature (°C): ')
         self.temp_entry = ttk.Entry(self.other_lbl_frame,
-                                    textvariable=self.temp, width=10,
+                                    textvariable=self.temp, width=11,
                                     validate='focusout',
                                     validatecommand=self.val.temp_vcmd,
                                     invalidcommand=self.val.temp_ivcmd)
@@ -177,19 +175,25 @@ class SunPathGUI():
                                                onvalue=1,
                                                offvalue=0)
 
-        self.data_chkbox = ttk.Checkbutton(self.output_lbl_frame,
-                                           text='Save plotting data as csv file',
-                                           variable=self.data,
-                                           onvalue=1,
-                                           offvalue=0)
+        self.plt_point_chkbox = ttk.Checkbutton(self.output_lbl_frame,
+                                                text='Plot sun symbol',
+                                                variable=self.plt_point,
+                                                onvalue=1,
+                                                offvalue=0)
+
+        self.csv_data_chkbox = ttk.Checkbutton(self.output_lbl_frame,
+                                               text='Save plotting data as csv file',
+                                               variable=self.csv_data,
+                                               onvalue=1,
+                                               offvalue=0)
 
         self.title_entry = ttk.Entry(self.output_lbl_frame,
-                                     textvariable=self.title, width=45)
+                                     textvariable=self.title, width=41)
         self.outputdir_btn = ttk.Button(self.output_lbl_frame,
                                         text='Select output directory',
                                         command=self.__output_directory)
         self.outputdir_lbl = ttk.Label(self.output_lbl_frame,
-                                       textvariable=self.outputdir, width=45)
+                                       textvariable=self.outputdir, width=40)
 
         # buttons
         self.quit_button = ttk.Button(self.button_frame, text='Quit',
@@ -218,28 +222,28 @@ class SunPathGUI():
                                               labelanchor='nw',
                                               padding=5)
         self.output_lbl_frame = ttk.LabelFrame(self.main_window,
-                                               text='Output',
+                                               text='Output chart',
                                                labelanchor='nw',
                                                padding=5)
 
     def __create_layouts(self):
         """Create layouts"""
-        # intro
+        # intro (not used)
         self.intro_lbl.grid(column=0, row=0, padx=5, pady=5, sticky='WE')
 
         # year
         self.year_lbl.grid(column=0, row=1, sticky='E', pady=(0, 10))
-        self.year_spin.grid(column=1, row=1, sticky='W', pady=(0, 10))
+        self.year_spin.grid(column=1, row=1, sticky='W', pady=(0, 5))
 
         # month
         self.month_lbl.grid(column=2, row=1, sticky='E', padx=(10, 1),
-                            pady=(0, 10))
-        self.month_spin.grid(column=3, row=1, sticky='W', pady=(0, 10))
+                            pady=(0, 5))
+        self.month_spin.grid(column=3, row=1, sticky='W', pady=(0, 5))
 
         # day
         self.day_lbl.grid(column=4, row=1, sticky='E', padx=(10, 1),
-                          pady=(0, 10))
-        self.day_spin.grid(column=5, row=1, sticky='W', pady=(0, 10))
+                          pady=(0, 5))
+        self.day_spin.grid(column=5, row=1, sticky='W', pady=(0, 5))
 
         # hour
         self.hour_lbl.grid(column=0, row=2, sticky='E')
@@ -251,8 +255,8 @@ class SunPathGUI():
 
         # time zone
         self.timezone_lbl.grid(column=4, row=2, sticky='E', padx=(10, 1),
-                               pady=(10, 10))
-        self.timezone_dropdown.grid(column=5, row=2, sticky='W', pady=(10, 10))
+                               pady=(5, 5))
+        self.timezone_dropdown.grid(column=5, row=2, sticky='W', pady=(5, 5))
 
         # daylight
         self.daylight_chkbox.grid(column=1, row=3, sticky='W', columnspan=3)
@@ -262,7 +266,7 @@ class SunPathGUI():
         self.latitude_entry.grid(column=1, row=4, sticky='W')
 
         # longitude
-        self.longitude_lbl.grid(column=2, row=4, sticky='E', padx=(46, 1))
+        self.longitude_lbl.grid(column=2, row=4, sticky='E', padx=(20, 1))
         self.longitude_entry.grid(column=3, row=4, sticky='W')
 
         # observers elevation
@@ -271,13 +275,13 @@ class SunPathGUI():
 
         # pressure
         self.press_lbl.grid(column=0, row=6, sticky='E', pady=(0, 10))
-        self.press_entry.grid(column=1, row=6, sticky='W')
+        self.press_entry.grid(column=1, row=6, sticky='W', pady=(0, 10))
 
         # temperature
         self.temp_lbl.grid(column=0, row=7, sticky='E', pady=(0, 10))
-        self.temp_entry.grid(column=1, row=7, sticky='W')
+        self.temp_entry.grid(column=1, row=7, sticky='W', pady=(0, 10))
 
-        # title
+        # chart title
         self.title_entry.grid(column=0, row=8, sticky='W')
 
         # horizontal checkbox
@@ -286,17 +290,20 @@ class SunPathGUI():
         # vertical checkbox
         self.vt_chart_chkbox.grid(column=0, row=10, sticky='W', pady=(0, 5))
 
+        # plot sun symbol
+        self.plt_point_chkbox.grid(column=0, row=11, sticky='W', pady=(0, 5))
+
         # data checkbox
-        self.data_chkbox.grid(column=0, row=11, sticky='W', pady=(0, 10))
+        self.csv_data_chkbox.grid(column=0, row=12, sticky='W', pady=(0, 10))
 
         # output directory
-        self.outputdir_btn.grid(column=0, row=12, sticky='W', pady=(0, 10))
-        self.outputdir_lbl.grid(column=0, row=13, sticky='W')
+        self.outputdir_btn.grid(column=0, row=13, sticky='W', pady=(0, 10))
+        self.outputdir_lbl.grid(column=0, row=14, sticky='W')
 
         # buttons
-        self.quit_button.grid(column=0, row=14, padx=5, pady=(15, 5),
+        self.quit_button.grid(column=0, row=15, padx=5, pady=(15, 5),
                               sticky='WE')
-        self.getcharts_button.grid(column=1, row=14, padx=5, pady=(15, 5),
+        self.getcharts_button.grid(column=1, row=15, padx=5, pady=(15, 5),
                                    sticky='WE')
 
         # label frames
@@ -309,7 +316,7 @@ class SunPathGUI():
         self.output_lbl_frame.grid(column=0, row=4, padx=5, pady=(10, 10),
                                    sticky='WE')
 
-        # frames
+        # frames (intro_frame not used)
         #self.intro_frame.grid(column=0, row=0, padx=5, pady=5, sticky='WE')
         self.button_frame.grid(column=0, row=5, padx=10, pady=(35, 10),
                                sticky='E')
@@ -320,25 +327,29 @@ class SunPathGUI():
 
     def __get_charts(self):
         """Class the class to create the sun position charts"""
-
         year = int(self.year.get())
         month = int(self.month.get())
         day = int(self.day.get())
         hour = int(self.hour.get())
         minute = int(self.minute.get())
-        timezone = self.timezone.get()
+        timezone = int(self.timezone.get())
         daylight = self.daylight.get()
         lat = float(self.latitude.get())
         lon = float(self.longitude.get())
-        obs_elev = float(self.obs_elev.get())
-        press = float(self.press.get())
-        temp = float(self.temp.get())
+        obs_elev = 0 if self.obs_elev.get() == '' else float(self.obs_elev.get())
+        press = 0 if self.press.get() == '' else float(self.press.get())
+        temp = 0 if self.temp.get() == '' else float(self.temp.get())
         title = self.title.get()
+        hz_chart = self.hz_chart.get()
+        vt_chart = self.vt_chart.get()
+        plt_point = self.plt_point.get()
+        csv_data = self.csv_data.get()
         path = self.outputdir.get()
 
         # test for date and time correctness
         tmp = [self.val.year_validation(year),
-               self.val.month_validation(month), self.val.day_validation(day),
+               self.val.month_validation(month),
+               self.val.day_validation(day),
                self.val.hour_validation(hour),
                self.val.minute_validation(minute)]
 
@@ -351,8 +362,7 @@ class SunPathGUI():
                 dt = datetime.datetime(year, month, day, hour, minute, 0,
                                        True if daylight == 1 else False)
             except:
-                self.val.error_msgbox('Invalid date or time value',
-                                      'Review the logs')
+                self.val.error_msgbox('Invalid date or time value')
                 return
 
         # test for coordinates correctness
@@ -362,13 +372,14 @@ class SunPathGUI():
             self.val.error_msgbox('Invalid coordinate values', '')
             return
 
-        sunpos = SunPosition(lat, lon, dt.isoformat(), daylight, obs_elev,
-                             press, temp)
+        sunpos = SunPosition(lat, lon, dt.isoformat(), timezone, daylight,
+                             obs_elev, press, temp)
         horizon_coords = sunpos.sun_position()
-        plot = PlotSunPath(horizon_coords, title, lat, lon,
-                           dt.strftime('%Y-%b-%d'), path)
+        horizon_coords_point = sunpos.sun_position_point()
+        plot = PlotSunPath(horizon_coords, horizon_coords_point, lat,
+                           lon, dt, timezone, title, hz_chart, vt_chart,
+                           plt_point, path)
         plot.plot_diagrams()
-
 
 class GUIValidation():
     "GUI validation for the input parameters"
@@ -469,11 +480,11 @@ class GUIValidation():
     def on_minute_invalid(self):
         """On invalid minute"""
         self.error_msgbox('Invalid minute',
-                          'Minute must be in the range 1 to 59')
+                          'Minute must be in the range 0 to 59')
 
     def minute_validation(self, minute):
         """Validate the minute"""
-        if int(minute) < 1 or int(minute) > 59:
+        if int(minute) < 0 or int(minute) > 59:
             return False
         return True
 
