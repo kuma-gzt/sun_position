@@ -2,7 +2,8 @@
 sun-path diagrams"""
 
 import os
-from math import radians, degrees
+from math import radians, degrees, pi
+import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib.ticker import AutoMinorLocator
@@ -11,20 +12,29 @@ import config as cfg
 
 class PlotSunPath:
     """This class will plot the horizontal and vertical sun-path diagrams"""
-    def __init__(self, horizon_coords, title, lat, lon, timezone, date, path):
+    def __init__(self, horizon_coords, horizon_coords_point, lat, lon, dt,
+                 timezone, title, hz_chart, vt_chart, plt_point, path):
         self.horizon_coords = horizon_coords
-        self.title = title
+        self.horizon_coords_point = horizon_coords_point
         self.lat = lat
         self.lon = lon
+        self.date = dt.strftime('%Y-%b-%d')
+        self.time = dt.strftime('%H:%M')
         self.timezone = timezone
-        self.date = date
+        self.title = title
+        self.hz_chart = int(hz_chart)
+        self.vt_chart = int(vt_chart)
+        self.plt_point = int(plt_point)
         self.path = path
 
     def plot_diagrams(self):
         """Plots the vertical and horizontal sun path diagrams"""
         chart_data = self.__get_chart_data()
-        self.__vertical_sunpath(chart_data)
-        self.__horizontal_sunpath(chart_data)
+        if self.hz_chart:
+            self.__horizontal_sunpath(chart_data)
+        if self.vt_chart:
+            self.__vertical_sunpath(chart_data)
+        
 
     def __vertical_sunpath(self, chart_data):
         """Plots the vertical sun-path diagram"""
@@ -66,10 +76,10 @@ class PlotSunPath:
                         for j in range(1, len(item[1])):
                             ax.annotate(item[3][j],
                                         xy=(degrees(item[1][j]), item[2][j]),
-                                        xytext=cfg.hour_symb_lat_pos['xytext'],
+                                        xytext=cfg.hour_symb['xytext'],
                                         textcoords='offset points',
-                                        color=cfg.hour_symb_lat_pos['color'],
-                                        size=cfg.hour_symb_lat_pos['size'])
+                                        color=cfg.hour_symb['color'],
+                                        size=cfg.hour_symb['size'])
             else:
                 azim = value[0]
                 alt = value[1]
@@ -132,14 +142,32 @@ class PlotSunPath:
                 # calculate the revised azimuth and altitude
                 azim, alt = self.__revised_azim_alt(value[0], value[1],
                                                     self.lat)
-                # plot user's curve
+                # plot date user curve
                 ax.plot(azim, alt, color=cfg.user_symb['color'],
                         linewidth=cfg.user_symb['linewidth'])
+
+                # plot hours in the date user curve
+                # ax.plot(azim, alt, color=cfg.user_symb['color'],
+                #         marker=cfg.user_symb['marker'])
 
                 # line and label for legend
                 lines.append(matplotlib.lines.Line2D([0], [0],
                              color=cfg.user_symb['color']))
                 labels.append(key[1:4] + ' ' + key[4:6])
+
+                # plot user's mark
+                if self.plt_point:
+                    azim = radians(self.horizon_coords_point[0])
+                    alt = self.horizon_coords_point[1]
+                    ax.plot(azim, alt, color=cfg.user_symb_point['color'],
+                            marker=cfg.user_symb_point['marker'],
+                            markersize=cfg.user_symb_point['markersize'])
+                    lines.append(matplotlib.lines.Line2D([0], [0],
+                                 color=cfg.user_symb_point['color'],
+                                 marker=cfg.user_symb_point['marker'],
+                                 markersize=cfg.user_symb_point['markersize'],
+                                 linewidth=cfg.user_symb_point['linewidth']))
+                    labels.append('Sun position')
 
                 # draw minor ticks every 5 degrees
                 az, al = self.__get_hz_minor_ticks(5)
@@ -154,34 +182,31 @@ class PlotSunPath:
                             linewidth=cfg.ana_symb['linewidth'])
                 # plot hour labels
                 for item in value:
-                    if item[0] == 'Dec21' and self.lat >= 0:
-                        # range starts at 1 so we don't plot the 25th hour
-                        for j in range(1, len(item[1])):
+                    # range starts at 1 so we don't plot the 25th hour
+                    for j in range(1, len(item[1])):
+                        if item[0] == 'Jun21' and self.lat >= 0:
                             ax.annotate(item[3][j],
                                         xy=(item[1][j], item[2][j]),
-                                        xytext=cfg.hour_symb_lat_pos['xytext'],
+                                        xytext=self.__repo_labels(item[1][j],
+                                                                  self.lat),
                                         textcoords='offset points',
-                                        color=cfg.hour_symb_lat_pos['color'],
-                                        size=cfg.hour_symb_lat_neg['size'])
-                    if item[0] == 'Jun21' and self.lat < 0:
-                        # range starts at 1 so we don't plot the 25th hour
-                        for j in range(1, len(item[1])):
+                                        color=cfg.hour_symb['color'],
+                                        size=cfg.hour_symb['size'],
+                                        horizontalalignment='center',
+                                        verticalalignment='center')
+                        if item[0] == 'Dec21' and self.lat < 0:
                             ax.annotate(item[3][j],
                                         xy=(item[1][j], item[2][j]),
-                                        xytext=cfg.hour_symb_lat_neg['xytext'],
+                                        xytext=self.__repo_labels(item[1][j],
+                                                                  self.lat),
                                         textcoords='offset points',
-                                        color=cfg.hour_symb_lat_neg['color'],
-                                        size=cfg.hour_symb_lat_neg['size'])
-            elif key == 'Mar21':
-                # calculate the revised azimuth and altitude
+                                        color=cfg.hour_symb['color'],
+                                        size=cfg.hour_symb['size'],
+                                        horizontalalignment='center',
+                                        verticalalignment='center')
+            else:
                 azim, alt = self.__revised_azim_alt(value[0], value[1],
                                                     self.lat)
-                ax.plot(azim, alt, color=cfg.equisols_symb['color'],
-                        linewidth=cfg.equisols_symb['linewidth'],
-                        linestyle=cfg.equisols[key][0])
-            else:
-                azim = value[0]
-                alt = value[1]
                 ax.plot(azim, alt, color=cfg.equisols_symb['color'],
                         linewidth=cfg.equisols_symb['linewidth'],
                         linestyle=cfg.equisols[key][0])
@@ -210,6 +235,8 @@ class PlotSunPath:
                    handlelength=4, frameon=False)
         text = f'Horizontal Sun Path Diagram \nLatitude: {self.lat}° \
                 \nLongitude: {self.lon}° \nDate: {self.date}'
+        if self.plt_point:
+            text = text + '\nTime: ' + self.time
         fig.text(0.01, 0.02, text, fontsize='small', linespacing=1.5)
 
         file_name = f'HorizontalSunPath_{self.date}.png'
@@ -217,7 +244,7 @@ class PlotSunPath:
         plt.show()
 
     def __get_chart_data(self):
-        """Processs the data for the plotting functions"""
+        """Process the data for the plotting functions"""
         whole_hours = []
         key_dates = ['Jun21', 'Mar21', 'Dec21']
         chart_data = {}
@@ -237,7 +264,7 @@ class PlotSunPath:
                 azimuth_rad = [radians(i) for i in azimuths]
                 chart_data[key] = (azimuth_rad, altitudes)
 
-            off_ut = int(self.timezone)
+            off_ut = self.timezone
 
             # get the coordinates for whole hours
             azims, alts, hours = self.__get_hours(azimuths, altitudes, off_ut)
@@ -248,24 +275,27 @@ class PlotSunPath:
         return chart_data
 
     def __revised_azim_alt(self, azim, alt, lat):
-        """For latitudes between -5 and 5 degrees there is a line that plots
-        inside the circle. This method adds new coordinates to move this line
+        """For latitudes between -30 and 30 degrees there are lines that plots
+        across the circle. This method adds new coordinates to move these lines
         off the circle plot"""
-        if lat > -5 and lat < 5:
-            if lat >= 0:
-                min_alt = min(alt)
-                min_alt_index = alt.index(min_alt)
-                azim.insert(min_alt_index + 1, 5.5)  # ~315 degrees
-                alt.insert(min_alt_index + 1, -89)
-                azim.insert(min_alt_index + 2, 6.27)  # ~360 degrees
-                alt.insert(min_alt_index + 2, -89)
-            else:
-                min_alt = min(alt)
-                min_alt_index = alt.index(min_alt)
-                azim.insert(min_alt_index + 1, 3.92)  # ~225 degrees
-                alt.insert(min_alt_index + 1, -89)
-                azim.insert(min_alt_index + 2, 3.14)  # ~180 degrees
-                alt.insert(min_alt_index + 2, -89)
+
+        if lat > -30 and lat < 30:
+            alt_sort = alt.copy()
+            alt_sort.sort()
+            for item in alt_sort:
+                ndx = alt.index(item)
+                if degrees(azim[ndx]) >= 270:
+                    azim.insert(ndx + 1, 5.5)
+                    alt.insert(ndx + 1, -89)
+                    azim.insert(ndx + 2, 6.27)
+                    alt.insert(ndx + 2, -89)
+                    return azim, alt
+                elif degrees(azim[ndx]) >= 180 and degrees(azim[ndx]) < 270:
+                    azim.insert(ndx + 1, 3.14)
+                    alt.insert(ndx + 1, -89)
+                    azim.insert(ndx + 2, 3.67)
+                    alt.insert(ndx + 2, -89)
+                    return azim, alt
 
         return azim, alt
 
@@ -284,13 +314,15 @@ class PlotSunPath:
             azims.append(radians(i))
             alts.append(altitudes[index])
             hours.append(count)
-        # for i in azimuths:
-        #     index = azimuths.index(i)
-        #     if index % 2 == 0:
-        #         count = count + 1
-        #         azims.append(radians(i))
-        #         alts.append(altitudes[index])
-        #         hours.append(count)
+
+        hour_pairs = [(-1, 23), (-2, 22), (-3, 21), (-4, 20), (-5, 19),
+                      (-6, 18), (-7, 17), (-8, 16), (-9, 15), (-10, 14),
+                      (-11, 13), (-12, 12)]
+
+        for item in hour_pairs:
+            if item[0] in hours:
+                ndx = hours.index(item[0])
+                hours[ndx] = item[1]
 
         return azims, alts, hours
 
@@ -354,3 +386,44 @@ class PlotSunPath:
         labels = [str(i) + '°' for i in ticks]
 
         return ticks, labels
+
+    def __repo_labels(self, x, lat):
+        """Reposition the hour labels"""
+        if lat >= 60 or lat <= -60:
+            x = degrees(x)
+            if x >= 345:
+                pos = (0, -6)
+            elif x < 15:
+                pos = (0, -6)
+            elif x >= 15 and x < 45:
+                pos = (-2, -6)
+            elif x >= 45 and x < 75:
+                pos = (-4, -6)
+            elif x >= 75 and x < 105:
+                pos = (-5, 0)
+            elif x >= 105 and x < 135:
+                pos = (-4, 6)
+            elif x >= 135 and x < 165:
+                pos = (-2, 6)
+            elif x >= 165 and x < 195:
+                pos = (0, 6)
+            elif x >= 195 and x < 225:
+                pos = (2, 6)
+            elif x >= 225 and x < 255:
+                pos = (4, 6)
+            elif x >= 255 and x < 285:
+                pos = (5, 0)
+            elif x >= 285 and x < 315:
+                pos = (4, -6)
+            elif x >= 315 and x < 345:
+                pos = (2, -6)
+            else:
+                pos = (0, 6)
+        elif lat >= 0 and lat < 60:
+            pos = (0, 6)
+        elif lat < 0 and lat > -60:
+            pos = (0, -6)
+        else:
+            pos = (0, 6)
+
+        return pos
