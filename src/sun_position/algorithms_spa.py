@@ -1,109 +1,182 @@
 """This module contains all the algorithms and formulas necesary for the 
-calculation of the sun-path charts"""
+calculation of the sun-path charts. All the formulas, algorithms and procedures
+arebased in the paper:
+'Solar position algorithm for solar radiation applications'
+(I. Reda, A. Andreas, 2003)"""
 from datetime import datetime, timedelta
 import math
 from math import degrees as deg
 from math import radians as rad
-import calendar
 import tables as tb
 
 
 class SunPosition:
-    """Formulas and algorithms to calculate the sun position"""
-    def __init__(self, lat, lon, date_time, is_daylight, obs_elev, press,
-                 temp):
-        self.lat = lat
-        self.lon = lon
+    """Formulas and algorithms to calculate the sun position. The methods, the 
+    variable names and the sequence of calculations follows (mostly) the one 
+    found in the paper 
+    'Solar position algorithm for solar radiation applications' 
+    (I. Reda, A. Andreas, 2003)."""
+    def __init__(self, lat, lon, date_time, timezone, daylight, obs_elev,
+                 press, temp):
+        self.lat = lat  # observer latitude
+        self.lon = lon  # observer longitude
         self.date_time = date_time  # local date and time
-        self.is_daylight = is_daylight  # boolean, is Daylight Saving Time
-        self.obs_elev = obs_elev  # observer's elevation in meters
+        self.timezone = timezone  # time zone
+        self.daylight = daylight  # boolean, is Daylight Saving Time
+        self.obs_elev = obs_elev  # observer elevation in meters
         self.press = press  # atmospheric pressure in mbar
         self.temp = temp  # temperature in Celcius degrees
 
     def sun_position(self):
+        """
+        Returns a dictionary holding the azimuth and altitude angles for
+        every day in the given year. Keys in the dictionary follows the format
+        0203 (Feb the 3rd).
+        :returns: a dictionary with 365/366 items
+        """
+        dt_obj = datetime.fromisoformat(self.date_time)
+        timezone = self.timezone
 
-        tmp = datetime.fromisoformat(self.date_time)
-        year = tmp.year
-        month = tmp.month
-        day = tmp.day
+        # convert local date and time to universal time (UT)
+        # note ut_day carry a decimal to acount for the hours and minutes
+        ut_year, ut_month, ut_day = self.__lct2ut(dt_obj, timezone,
+                                                  self.daylight)
+        positions = {}
 
+        firstday = datetime(ut_year, 1, 1)
+        lastday = datetime(ut_year, 12, 31)
+        # create a list holding 365/366 days for the given year
+        alldays = [firstday + timedelta(days=x) for x in
+                   range((lastday - firstday).days + 1)]
+
+        for dt in alldays:
+            year = dt.year
+            month = dt.month
+            day = dt.day
+
+            azim_lst = []
+            alt_lst = []
+
+            if month == ut_month and day == int(ut_day):
+                key = dt.strftime('p%b%d')
+            else:
+                key = dt.strftime('%b%d')
+
+            for i in range(0, 25):  # 25 hours
+                decimal_day = day + i/24  # 24 hours
+
+                elev_azim = self.__elev_azim(year, month, decimal_day)
+
+                azim_lst.append(elev_azim['topo_azim_ang'])
+                alt_lst.append(elev_azim['topo_elev_ang'])
+
+            positions[key] = (azim_lst, alt_lst)
+
+        return positions
+
+    def sun_position_point(self):
+        """
+        Returns a tuple holding the azimuth and altitude angles for the user 
+        selected date and time.
+        :returns: a tuple holding azimuth and altitude
+        """
+        dt_obj = datetime.fromisoformat(self.date_time)
+        timezone = self.timezone
+
+        # convert local date and time to universal time (UT)
+        # note ut_day carry a decimal to acount for the hours and minutes
+        ut_year, ut_month, ut_day = self.__lct2ut(dt_obj, timezone,
+                                                  self.daylight)
+        elev_azim = self.__elev_azim(ut_year, ut_month, ut_day)
+        azim = elev_azim['topo_azim_ang']
+        alt = elev_azim['topo_elev_ang']
+
+        return (azim, alt)
+
+    def __elev_azim(self, year, month, day):
+        """
+        Gets the azimuth and elevation (also known as altitude)
+        :param year: year - universal time
+        :param month: month - universal time
+        :param day: day - universal time
+        :returns: a dictionary holding the sun's azimuth and the elevation
+        """
+        # calculate the Julian dates
         jdates = self.__juliandates(year, month, day)
         jd = jdates['julianday']
-        jdE = jdates['julian_ephemeris_day']
         jc = jdates['juliancentury']
         jce = jdates['julian_ephemeris_century']
         jme = jdates['julian_ephemeris_millenium']
-        print('jd: ' + str(jd) + ' jdE: ' + str(jdE) + ' jc: ' + str(jc) + ' jce: ' + str(jce) + ' jme: ' + str(jme))
 
+        # calculate the heliocentric parameters
         hc = self.__heliocentric_params(jme)
         L = hc['heliocentric_lon']
         B = hc['heliocentric_lat']
         R = hc['earth_radius']
-        print('L: ' + str(L) + ' B: ' + str(B) + ' R: ' + str(R))
 
+        # calculate the geocentric latitude and longitude
         glatlon = self.__geocentric_latlon(B, L)
         geocentric_lat = glatlon['geocentric_lat']
         geocentric_lon = glatlon['geocentric_lon']
-        print('geocentric_lat: ' + str(geocentric_lat) + ' geocentric_lon: ' + str(geocentric_lon))
 
+        # calculate the nutation in longitude and obliquity
         nto = self.__nutations(jce)
         nutation_longitude = nto['nutation_longitude']
         nutation_obliquity = nto['nutation_obliquity']
-        print('nutation_longitude: ' + str(nutation_longitude) + ' nutation_obliquity: ' + str(nutation_obliquity))
 
+        # calculate the true obliquity of the ecliptic
         true_obliquity = self.__true_obliq_ecliptic(jme, nutation_obliquity)
-        print('true_obliquity: ' + str(true_obliquity))
 
-        app_sun_longitude = self.__apparent_app_sun_lon(geocentric_lon, nutation_longitude, R)
-        print('app_sun_longitude: ' + str(app_sun_longitude))
+        # calculate the apparent sun longitude
+        app_sun_longitude = self.__apparent_app_sun_lon(geocentric_lon,
+                                                        nutation_longitude, R)
 
-        sidereal_time = self.__apparent_sidereal_time(jd, jc, nutation_longitude,
-                                             true_obliquity)
-        print('sidereal_time: ' + str(sidereal_time))
+        # calculate the apparent sidereal time at Greenwich
+        app_sidereal_time = self.__apparent_sidereal_time(jd, jc,
+                                                          nutation_longitude,
+                                                          true_obliquity)
 
-        geocentric_right_asc = self.__geocentric_right_asc(app_sun_longitude, true_obliquity,
-                                                 geocentric_lat)
-        print('geocentric_right_asc: ' + str(geocentric_right_asc))
+        # calculate the geocentric right ascension
+        geocentric_right_asc = self.__geocentric_right_asc(app_sun_longitude,
+                                                           true_obliquity,
+                                                           geocentric_lat)
 
-        declination = self.__geocentric_declination(geocentric_lat, true_obliquity,
-                                         app_sun_longitude)
-        print('declination: ' + str(declination))
+        # calculate the geocentric sun declination
+        geocentric_declination = self.__geocentric_declination(
+                                                             geocentric_lat,
+                                                             true_obliquity,
+                                                             app_sun_longitude)
 
-        local_hour_angle = self.__local_hour_angle(sidereal_time, self.lon,
+        # calculate the observer local hour angle
+        local_hour_angle = self.__local_hour_angle(app_sidereal_time, self.lon,
                                                    geocentric_right_asc)
-        print('local_hour_angle: ' + str(local_hour_angle))
 
+        # calculate the topocentric declination and
+        # topocentric local hour angle
         ta = self.__topocentric_angles(R, self.lat, self.obs_elev,
-                                       local_hour_angle, declination,
+                                       local_hour_angle,
+                                       geocentric_declination,
                                        geocentric_right_asc)
-
-        topo_right_asc = ta['topo_right_asc']
         topo_declination = ta['topo_declination']
         topo_localhour_ang = ta['topo_localhour_ang']
-        print('topo_right_asc: ' + str(topo_right_asc))
-        print('topo_declination: ' + str(topo_declination))
-        print('topo_localhourang: ' + str(topo_localhour_ang))
 
-        el_az = self.__elevation_azimuth(self.lat, topo_declination,
-                                         topo_localhour_ang, self.press,
-                                         self.temp)
-        topo_elev_ang = el_az['topo_elev_ang']
-        topo_azim_ang = el_az['topo_azim_ang']
-
-        print('topo_elevation_angle: ' + str(topo_elev_ang))
-        print('topo_azimuth_angle: ' + str(topo_azim_ang))
+        # calculate the topocentric elevation and azimuth angles
+        return self.__elevation_azimuth(self.lat, topo_declination,
+                                        topo_localhour_ang, self.press,
+                                        self.temp)
 
     def __juliandates(self, year, month, day):
         """
-        Gets the Julian day (jd), Julian Century (jc),
-        Julian Ephemeris Day (jdE), Julian Ephemeris Century (jce) and
-        Julian Ephemeris Millenium (jme)
+        Calculates the Julian day (jd), Julian Century (jc),
+        Julian Ephemeris Century (jce) and Julian Ephemeris Millenium (jme)
         :param year: year - universal time
         :param month: month - universal time
         :param day: day - universal time
         :returns: a dictionary holding all the Julian dates
         """
-        # delta_t is diff between earth rotation time and terrestrial time
+        # delta_t is the difference between earth rotation time and terrestrial 
+        # time. How it is calculated here differs from the method recommended 
+        # in the paper
         delta_t = self.__delta_t(year, month)
 
         if month < 3:
@@ -123,7 +196,6 @@ class SunPosition:
         julian_ephmillenium = julian_ephcentury/10
 
         return {'julianday': julianday,
-                'julian_ephemeris_day': julian_ephday,
                 'juliancentury': juliancentury,
                 'julian_ephemeris_century': julian_ephcentury,
                 'julian_ephemeris_millenium': julian_ephmillenium}
@@ -394,7 +466,6 @@ class SunPosition:
         :param jme: julian_ephemeris_millenium
         :returns: term L0 (formula # 10)
         """
-
         if isinstance(a, tuple):
             tmp = zip(a, b, c)
             tmp_ = 0
@@ -414,11 +485,79 @@ class SunPosition:
         frac, _ = math.modf(angle/360)
 
         if angle > 0:
-            out = 360 * frac
+            out = 360 * abs(frac)
         else:
-            out = 360 - 360 * frac
+            out = 360 - 360 * abs(frac)
 
         return out
+
+    def __juliandate(self, year, month, day):
+        """Calculates the julian date for a Greenwich calendar date"""
+        if month < 3:
+            year = year - 1
+            month = month + 12
+
+        # Here we asume all years are > 1582
+        a = int(year/100)
+        b = 2 - a + int(a/4)
+
+        if year < 0:
+            c = int((365.25*year) - 0.75)
+        else:
+            c = int(365.25*year)
+
+        d = int(30.6001*(month + 1))
+
+        return b + c + d + day + 1720994.5
+
+    def __juliandate2gcd(self, juliandate):
+        """Converts julianday to Greenwich Calendar Date (gcd)"""
+        jd = juliandate + 0.5
+        frac, inte = math.modf(jd)
+
+        if inte > 2299160:
+            a = int((inte - 1867216.25)/36524.25)
+            b = inte + a - int(a/4) + 1
+        else:
+            b = inte
+
+        c = b + 1524
+        d = int((c - 122.1)/365.25)
+        e = int(365.25*d)
+        g = int((c - e)/30.6001)
+        day = c - e + frac - int(30.6001*g)
+
+        if g < 13.5:
+            month = g - 1
+        else:
+            month = g - 13
+
+        if month > 2.5:
+            year = d - 4716
+        else:
+            year = d - 4715
+
+        return year, month, day
+
+    def __lct2ut(self, dt_obj, timezone, daylight):
+        """Converts local civil time (lct) to universal time (ut)"""
+        year = dt_obj.year
+        month = dt_obj.month
+        day = dt_obj.day
+        hour = dt_obj.hour
+        minute = dt_obj.minute
+
+        lct = hour + minute/60  # seconds are zero
+
+        if daylight:
+            lct = lct - 1
+
+        ut = lct - timezone
+        day = day + ut/24
+        juliandate = self.__juliandate(year, month, day)
+        year_, month_, day_ = self.__juliandate2gcd(juliandate)
+
+        return year_, month_, day_
 
     def __delta_t(self, year, month):
         """
@@ -474,6 +613,7 @@ class SunPosition:
 
         return dt
 
+
 if __name__ == '__main__':
-    app = SunPosition(40.76, -73.984, '2003-07-27T00:00:00', True, 27, 0, 0)
-    app.sun_position()
+    app = SunPosition(60, 0, '2003-01-01T00:00:00', 0, False, 0, 0, 0)
+    pos = app.sun_position()
