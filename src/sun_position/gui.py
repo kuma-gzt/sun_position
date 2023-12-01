@@ -1,5 +1,6 @@
 """This module contains the Tkinter GUI code."""
 import os
+import csv
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
@@ -301,9 +302,9 @@ class SunPathGUI():
         self.outputdir_lbl.grid(column=0, row=14, sticky='W')
 
         # buttons
-        self.quit_button.grid(column=0, row=15, padx=5, pady=(15, 5),
+        self.quit_button.grid(column=0, row=15, padx=5, pady=(10, 5),
                               sticky='WE')
-        self.getcharts_button.grid(column=1, row=15, padx=5, pady=(15, 5),
+        self.getcharts_button.grid(column=1, row=15, padx=5, pady=(10, 5),
                                    sticky='WE')
 
         # label frames
@@ -318,7 +319,7 @@ class SunPathGUI():
 
         # frames (intro_frame not used)
         #self.intro_frame.grid(column=0, row=0, padx=5, pady=5, sticky='WE')
-        self.button_frame.grid(column=0, row=5, padx=10, pady=(35, 10),
+        self.button_frame.grid(column=0, row=5, padx=10, pady=(10, 10),
                                sticky='E')
 
     def __output_directory(self):
@@ -326,7 +327,7 @@ class SunPathGUI():
         self.outputdir.set(filedialog.askdirectory())
 
     def __get_charts(self):
-        """Class the class to create the sun position charts"""
+        """Class to create the sun position charts"""
         year = int(self.year.get())
         month = int(self.month.get())
         day = int(self.day.get())
@@ -376,6 +377,18 @@ class SunPathGUI():
                              obs_elev, press, temp)
         horizon_coords = sunpos.sun_position()
         horizon_coords_point = sunpos.sun_position_point()
+        if int(csv_data):
+            field_names = ['Dates', 'Azimuths', 'Altitudes']
+            file_name = f'SunPositions_{year}-{month}-{day}_{hour}-{minute}.csv'
+            sun_positions = []
+
+            for key, value in horizon_coords.items():
+                sun_positions.append([key, value[0], value[1]])
+            with open(os.path.join(path, file_name), 'w', newline='', encoding='UTF8') as f:
+                writer = csv.writer(f)
+                writer.writerow(field_names)
+                writer.writerows(sun_positions)
+
         plot = PlotSunPath(horizon_coords, horizon_coords_point, lat,
                            lon, dt, timezone, title, hz_chart, vt_chart,
                            plt_point, path)
