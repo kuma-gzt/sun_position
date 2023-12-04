@@ -384,7 +384,6 @@ class SunPathGUI():
 
         for item in tz_lat_pairs:
             if item[0] == timezone:
-                print(item[0])
                 low_bound = item[1] - tz_width*15
                 upp_bound = item[1] + tz_width*15
                 if lon <= low_bound or lon >= upp_bound:
@@ -397,6 +396,8 @@ class SunPathGUI():
                              obs_elev, press, temp)
         horizon_coords = sunpos.sun_position()
         horizon_coords_point = sunpos.sun_position_point()
+
+        # save azimuth and altitude data as a csv file
         if int(csv_data):
             field_names = ['Dates', 'Azimuths', 'Altitudes']
             file_name = f'SunPositions_{year}-{month}-{day}_{hour}-{minute}.csv'
