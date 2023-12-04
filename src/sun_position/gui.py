@@ -223,7 +223,7 @@ class SunPathGUI():
                                               labelanchor='nw',
                                               padding=5)
         self.output_lbl_frame = ttk.LabelFrame(self.main_window,
-                                               text='Output chart',
+                                               text='Output chart options',
                                                labelanchor='nw',
                                                padding=5)
 
@@ -362,8 +362,8 @@ class SunPathGUI():
                 # seconds are zero
                 dt = datetime.datetime(year, month, day, hour, minute, 0,
                                        True if daylight == 1 else False)
-            except:
-                self.val.error_msgbox('Invalid date or time value')
+            except ValueError as err:
+                self.val.error_msgbox('Invalid date or time', err)
                 return
 
         # test for coordinates correctness
@@ -372,6 +372,26 @@ class SunPathGUI():
         if not all(tmp):
             self.val.error_msgbox('Invalid coordinate values', '')
             return
+
+        # test for time zone and latitude congruency
+        tz_lat_pairs = ((-12, -180), (-11, -165), (-10, -150), (-9, -135),
+                        (-8, -120), (-7, -105), (-6, -90), (-5, -75),
+                        (-4, -60), (-3, -45), (-2, -30), (-1, 15), (0, 0),
+                        (1, 15), (2, 30), (3, 45), (4, 60), (5, 75),
+                        (6, 90), (7, 105), (8, 120), (9, 135), (10, 150),
+                        (11, 165), (12, 180))
+        tz_width = 4
+
+        for item in tz_lat_pairs:
+            if item[0] == timezone:
+                print(item[0])
+                low_bound = item[1] - tz_width*15
+                upp_bound = item[1] + tz_width*15
+                if lon <= low_bound or lon >= upp_bound:
+                    txt_main = f'Longitude values must be between {tz_width} hours of the selected time zone'
+                    txt_detail = f'For the time zone "UTC {timezone}" the minimum and maximum longitude values are: {low_bound} and {upp_bound}'
+                    self.val.error_msgbox(txt_main, txt_detail)
+                    return
 
         sunpos = SunPosition(lat, lon, dt.isoformat(), timezone, daylight,
                              obs_elev, press, temp)
@@ -393,6 +413,7 @@ class SunPathGUI():
                            lon, dt, timezone, title, hz_chart, vt_chart,
                            plt_point, path)
         plot.plot_diagrams()
+
 
 class GUIValidation():
     "GUI validation for the input parameters"
