@@ -34,7 +34,6 @@ class PlotSunPath:
             self.__horizontal_sunpath(chart_data)
         if self.vt_chart:
             self.__vertical_sunpath(chart_data)
-        
 
     def __vertical_sunpath(self, chart_data):
         """Plots the vertical sun-path diagram"""
@@ -61,6 +60,20 @@ class PlotSunPath:
                 lines.append(matplotlib.lines.Line2D([0], [0],
                              color=cfg.user_symb['color']))
                 labels.append(key[1:4] + ' ' + key[4:6])
+
+                # plot user's mark
+                if self.plt_point:
+                    azim = self.horizon_coords_point[0]
+                    alt = self.horizon_coords_point[1]
+                    ax.plot(azim, alt, color=cfg.user_symb_point['color'],
+                            marker=cfg.user_symb_point['marker'],
+                            markersize=cfg.user_symb_point['markersize'])
+                    lines.append(matplotlib.lines.Line2D([0], [0],
+                                 color=cfg.user_symb_point['color'],
+                                 marker=cfg.user_symb_point['marker'],
+                                 markersize=cfg.user_symb_point['markersize'],
+                                 linewidth=cfg.user_symb_point['linewidth']))
+                    labels.append('Sun position')
             elif key == 'hours':
                 # plot analemmas
                 analemmas = self.__get_analemmas(value)
@@ -118,6 +131,8 @@ class PlotSunPath:
                    handlelength=4, frameon=False)
         text = f'Vertical Sun Path Diagram \nLatitude: {self.lat}° \
                 \nLongitude: {self.lon}° \nDate: {self.date}'
+        if self.plt_point:
+            text = text + '\nTime: ' + self.time
         fig.text(0.01, 0.02, text, fontsize='small', linespacing=1.5)
 
         file_name = f'VerticalSunPath_{self.date}.png'
