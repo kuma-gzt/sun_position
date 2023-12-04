@@ -22,7 +22,7 @@ user_symb_point = {'color': 'red', 'marker': 'o', 'markersize': '6',
 ana_symb = {'color': 'black', 'linestyle': 'solid', 'linewidth': 0.5}
 
 # hour symbology properties
-hour_symb = {'color': 'black', 'size': '7', 'xytext': (0, 6)}
+hour_symb = {'color': 'black', 'size': '7', 'xytext': (-3, 5)}
 
 # grid symbology properties
 grid_symb = {'color1': '#cecece', 'color2': 'black', 'color3': '#767676',
