@@ -1,4 +1,4 @@
-"""This module contains the Tkinter GUI code."""
+"""This module contains the Tkinter GUI code"""
 import os
 import csv
 import tkinter as tk
@@ -109,7 +109,7 @@ class SunPathGUI():
                                               textvariable=self.timezone,
                                               state='readonly', justify='left',
                                               width=5, values=ut)
-        self.timezone_dropdown.current(6)
+        self.timezone_dropdown.current(5)
 
         # daylight
         self.daylight_chkbox = ttk.Checkbutton(self.date_lbl_frame,
@@ -326,20 +326,34 @@ class SunPathGUI():
         """Dialog to select output directory"""
         self.outputdir.set(filedialog.askdirectory())
 
+    def __test_input(self, input_string, param_name, is_floating):
+        """Test input values before assignment"""
+        try:
+            if is_floating:
+                return float(input_string)
+            else:
+                return int(input_string)
+        except ValueError:
+            self.val.error_msgbox(f'Invalid {param_name} value', '')
+            return
+
     def __get_charts(self):
         """Class to create the sun position charts"""
-        year = int(self.year.get())
-        month = int(self.month.get())
-        day = int(self.day.get())
-        hour = int(self.hour.get())
-        minute = int(self.minute.get())
+        year = self.__test_input(self.year.get(), 'year', False)
+        month = self.__test_input(self.month.get(), 'month', False)
+        day = self.__test_input(self.day.get(), 'day', False)
+        hour = self.__test_input(self.hour.get(), 'hour', False)
+        minute = self.__test_input(self.minute.get(), 'minute', False)
         timezone = int(self.timezone.get())
         daylight = self.daylight.get()
-        lat = float(self.latitude.get())
-        lon = float(self.longitude.get())
-        obs_elev = 0 if self.obs_elev.get() == '' else float(self.obs_elev.get())
-        press = 0 if self.press.get() == '' else float(self.press.get())
-        temp = 0 if self.temp.get() == '' else float(self.temp.get())
+        lat = self.__test_input(self.latitude.get(), 'latitude', True)
+        lon = self.__test_input(self.longitude.get(), 'longitude', True)
+        obs_elev = 0 if self.obs_elev.get() == '' else \
+            self.__test_input(self.obs_elev.get(), 'observer elevation', True)
+        press = 0 if self.press.get() == '' else \
+            self.__test_input(self.press.get(), 'pressure', True)
+        temp = 0 if self.temp.get() == '' else \
+            self.__test_input(self.temp.get(), 'temperature', True)
         title = self.title.get()
         hz_chart = self.hz_chart.get()
         vt_chart = self.vt_chart.get()
@@ -362,8 +376,8 @@ class SunPathGUI():
                 # seconds are zero
                 dt = datetime.datetime(year, month, day, hour, minute, 0,
                                        True if daylight == 1 else False)
-            except ValueError as err:
-                self.val.error_msgbox('Invalid date or time', err)
+            except ValueError:
+                self.val.error_msgbox('Invalid date or time value', '')
                 return
 
         # test for coordinates correctness
@@ -441,9 +455,10 @@ class GUIValidation():
         self.hour_ivcmd = (self.main_window.register(self.on_hour_invalid),)
 
         # minute
-        self.minute_vcmd = (self.main_window.register(self.minute_validation),
-                            '%P')
-        self.minute_ivcmd = (self.main_window.register(self.on_minute_invalid),)
+        self.minute_vcmd = (
+            self.main_window.register(self.minute_validation), '%P')
+        self.minute_ivcmd = (
+            self.main_window.register(self.on_minute_invalid),)
 
         # latitude
         self.lat_vcmd = (self.main_window.register(self.lat_validation), '%P')
@@ -454,9 +469,10 @@ class GUIValidation():
         self.lon_ivcmd = (self.main_window.register(self.on_lon_invalid),)
 
         # observer elevation
-        self.obs_elev_vcmd = (self.main_window.register(self.obs_elev_validation),
-                              '%P')
-        self.obs_elev_ivcmd = (self.main_window.register(self.on_obs_elev_invalid),)
+        self.obs_elev_vcmd = (
+            self.main_window.register(self.obs_elev_validation), '%P')
+        self.obs_elev_ivcmd = (
+            self.main_window.register(self.on_obs_elev_invalid),)
 
         # pressure
         self.press_vcmd = (self.main_window.register(self.press_validation),
@@ -547,8 +563,9 @@ class GUIValidation():
 
     def obs_elev_validation(self, obs_elev):
         """Validate the observer elevation"""
-        if float(obs_elev) < -420 or float(obs_elev) > 8850:
-            return False
+        if obs_elev == '':
+            if float(obs_elev) < -420 or float(obs_elev) > 8850:
+                return False
         return True
 
     def on_obs_elev_invalid(self):
@@ -558,8 +575,9 @@ class GUIValidation():
 
     def press_validation(self, press):
         """Validate the atmospheric pressure"""
-        if float(press) < 850 or float(press) > 1090:
-            return False
+        if press == '':
+            if float(press) < 850 or float(press) > 1090:
+                return False
         return True
 
     def on_press_invalid(self):
@@ -569,9 +587,10 @@ class GUIValidation():
 
     def temp_validation(self, temp):
         """Validate the temperature"""
-        if float(temp) < -90 or float(temp) > 57:
-            return False
-        return True
+        if temp == '':
+            if float(temp) < -90 or float(temp) > 57:
+                return False
+            return True
 
     def on_temp_invalid(self):
         """On invalid temperature"""
