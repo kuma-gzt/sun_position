@@ -137,7 +137,7 @@ class PlotSunPath:
 
         file_name = f'VerticalSunPath_{self.date}.png'
         plt.savefig(os.path.join(self.path, file_name))
-        plt.show()
+        #plt.show()
 
     def __horizontal_sunpath(self, chart_data):
         """Plots the horizontal sun-path diagram"""
@@ -256,7 +256,7 @@ class PlotSunPath:
 
         file_name = f'HorizontalSunPath_{self.date}.png'
         plt.savefig(os.path.join(self.path, file_name))
-        plt.show()
+        #plt.show()
 
     def __get_chart_data(self):
         """Process the data for the plotting functions"""
