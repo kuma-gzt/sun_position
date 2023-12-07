@@ -1,6 +1,6 @@
 """This module contains all the algorithms and formulas necesary for the 
 calculation of the sun-path charts. All the formulas, algorithms and procedures
-arebased in the paper:
+are based on the paper:
 'Solar position algorithm for solar radiation applications'
 (I. Reda, A. Andreas, 2003)"""
 from datetime import datetime, timedelta
@@ -16,13 +16,11 @@ class SunPosition:
     found in the paper 
     'Solar position algorithm for solar radiation applications' 
     (I. Reda, A. Andreas, 2003)."""
-    def __init__(self, lat, lon, date_time, timezone, daylight, obs_elev,
-                 press, temp):
+    def __init__(self, lat, lon, date_time, timezone, obs_elev, press, temp):
         self.lat = lat  # observer latitude
         self.lon = lon  # observer longitude
         self.date_time = date_time  # local date and time
         self.timezone = timezone  # time zone
-        self.daylight = daylight  # boolean, is Daylight Saving Time
         self.obs_elev = obs_elev  # observer elevation in meters
         self.press = press  # atmospheric pressure in mbar
         self.temp = temp  # temperature in Celcius degrees
@@ -39,8 +37,7 @@ class SunPosition:
 
         # convert local date and time to universal time (UT)
         # note ut_day carry a decimal to acount for the hours and minutes
-        ut_year, ut_month, ut_day = self.__lct2ut(dt_obj, timezone,
-                                                  self.daylight)
+        ut_year, ut_month, ut_day = self.__lct2ut(dt_obj, timezone)
         positions = {}
 
         firstday = datetime(ut_year, 1, 1)
@@ -85,8 +82,7 @@ class SunPosition:
 
         # convert local date and time to universal time (UT)
         # note ut_day carry a decimal to acount for the hours and minutes
-        ut_year, ut_month, ut_day = self.__lct2ut(dt_obj, timezone,
-                                                  self.daylight)
+        ut_year, ut_month, ut_day = self.__lct2ut(dt_obj, timezone)
         elev_azim = self.__elev_azim(ut_year, ut_month, ut_day)
         azim = elev_azim['topo_azim_ang']
         alt = elev_azim['topo_elev_ang']
@@ -539,7 +535,7 @@ class SunPosition:
 
         return year, month, day
 
-    def __lct2ut(self, dt_obj, timezone, daylight):
+    def __lct2ut(self, dt_obj, timezone):
         """Converts local civil time (lct) to universal time (ut)"""
         year = dt_obj.year
         month = dt_obj.month
@@ -548,9 +544,6 @@ class SunPosition:
         minute = dt_obj.minute
 
         lct = hour + minute/60  # seconds are zero
-
-        if daylight:
-            lct = lct - 1
 
         ut = lct - timezone
         day = day + ut/24
