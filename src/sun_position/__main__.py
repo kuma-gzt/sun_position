@@ -1,6 +1,5 @@
 "This is the entry point of the package"
 import sys
-import logging
 from gui import SunPathGUI
 
 def main(args=None):

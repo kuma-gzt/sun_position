@@ -197,10 +197,10 @@ class SunPathGUI():
                                        textvariable=self.outputdir, width=40)
 
         # buttons
-        self.quit_button = ttk.Button(self.button_frame, text='Quit',
+        self.quit_button = ttk.Button(self.button_frame, text='Close',
                                       command=self.main_window.destroy)
         self.getcharts_button = ttk.Button(self.button_frame,
-                                           text='Get Charts',
+                                           text='Plot Charts',
                                            command=self.__get_charts)
 
     def __create_frames(self):
@@ -407,8 +407,8 @@ class SunPathGUI():
                     self.val.error_msgbox(txt_main, txt_detail)
                     return
 
-        sunpos = SunPosition(lat, lon, dt.isoformat(), timezone, daylight,
-                             obs_elev, press, temp)
+        sunpos = SunPosition(lat, lon, dt.isoformat(), timezone, obs_elev,
+                             press, temp)
         horizon_coords = sunpos.sun_position()
         horizon_coords_point = sunpos.sun_position_point()
 
