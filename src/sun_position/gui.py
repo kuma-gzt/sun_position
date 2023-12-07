@@ -14,7 +14,7 @@ class SunPathGUI():
     "GUI dialog for the input of parameters and running of the program"
     def __init__(self):
         self.main_window = tk.Tk()
-        self.main_window.title('Sun-Path Charts')
+        self.main_window.title('Sun Position')
         self.main_window.resizable(False, False)
         self.main_window.configure(bg='#dcdad5')
 
@@ -36,7 +36,7 @@ class SunPathGUI():
         self.hour = tk.StringVar(value=dt.hour)
         self.minute = tk.StringVar(value=dt.minute)
         self.timezone = tk.StringVar()
-        self.daylight = tk.StringVar()
+        self.daylight = tk.StringVar(value=0)
         self.latitude = tk.StringVar(value='51.05')
         self.longitude = tk.StringVar(value='-114.08')
         self.obs_elev = tk.StringVar(value='')
@@ -374,8 +374,9 @@ class SunPathGUI():
         else:
             try:
                 # seconds are zero
-                dt = datetime.datetime(year, month, day, hour, minute, 0,
-                                       True if daylight == 1 else False)
+                dt = datetime.datetime(year, month, day, hour, minute, 0)
+                if int(daylight) == 1:
+                    dt = dt - datetime.timedelta(hours=1)
             except ValueError:
                 self.val.error_msgbox('Invalid date or time value', '')
                 return
