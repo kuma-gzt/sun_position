@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sun-position"
+version = "1.0.0"
+dependencies = [
+    "matplotlib>=3.7"
+]
+requires-python = ">= 3.9"
+authors = [
+  {name = "Leo Guzman", email = "kuma@mailfence.com"}
+]
+maintainers = [
+  {name = "Leo Guzman", email = "kuma@mailfence.com"}
+]
+description = "Plots the horizontal and vertical sun-path diagrams"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+keywords = ["sun path", "sun position", "sun diagram"]
+
+[project.urls]
+Homepage = "https://github.com/kuma-gzt/sun_position"
+Repository = "https://github.com/kuma-gzt/sun_position"
