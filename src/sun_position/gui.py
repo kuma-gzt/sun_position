@@ -51,15 +51,7 @@ class SunPathGUI():
 
     def __create_widgets(self):
         """Create widgets"""
-
         self.val = GUIValidation(self.main_window)
-
-        # intro (not used)
-        intro_txt = 'Sun-Path Charts Parameters'
-        self.intro_lbl = ttk.Label(self.intro_frame, text=intro_txt,
-                                   font=("TkDefaultFont", 12),
-                                   anchor='e')
-
         # year
         self.year_lbl = ttk.Label(self.date_lbl_frame, text='Year: ')
         self.year_spin = ttk.Spinbox(self.date_lbl_frame, from_=1900, to=2100,
@@ -164,6 +156,9 @@ class SunPathGUI():
                                     invalidcommand=self.val.temp_ivcmd)
 
         # output
+        self.title_entry = ttk.Entry(self.output_lbl_frame,
+                                     textvariable=self.title, width=41)
+
         self.hz_chart_chkbox = ttk.Checkbutton(self.output_lbl_frame,
                                                text='Plot horizontal sun path',
                                                variable=self.hz_chart,
@@ -188,8 +183,6 @@ class SunPathGUI():
                                                onvalue=1,
                                                offvalue=0)
 
-        self.title_entry = ttk.Entry(self.output_lbl_frame,
-                                     textvariable=self.title, width=41)
         self.outputdir_btn = ttk.Button(self.output_lbl_frame,
                                         text='Select output directory',
                                         command=self.__output_directory)
@@ -205,7 +198,6 @@ class SunPathGUI():
 
     def __create_frames(self):
         """Create frames"""
-        self.intro_frame = ttk.Frame(self.main_window)
         self.button_frame = ttk.Frame(self.main_window)
 
     def __create_lbl_frames(self):
@@ -229,9 +221,6 @@ class SunPathGUI():
 
     def __create_layouts(self):
         """Create layouts"""
-        # intro (not used)
-        self.intro_lbl.grid(column=0, row=0, padx=5, pady=5, sticky='WE')
-
         # year
         self.year_lbl.grid(column=0, row=1, sticky='E', pady=(0, 10))
         self.year_spin.grid(column=1, row=1, sticky='W', pady=(0, 5))
@@ -316,9 +305,7 @@ class SunPathGUI():
                                   sticky='WE')
         self.output_lbl_frame.grid(column=0, row=4, padx=5, pady=(10, 10),
                                    sticky='WE')
-
-        # frames (intro_frame not used)
-        #self.intro_frame.grid(column=0, row=0, padx=5, pady=5, sticky='WE')
+        # frames
         self.button_frame.grid(column=0, row=5, padx=10, pady=(10, 10),
                                sticky='E')
 
