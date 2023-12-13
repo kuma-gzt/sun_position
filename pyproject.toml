@@ -19,7 +19,16 @@ description = "Plots the horizontal and vertical sun-path diagrams"
 readme = "README.md"
 license = {file = "LICENSE.txt"}
 keywords = ["sun path", "sun position", "sun diagram"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python"
+]
 
 [project.urls]
 Homepage = "https://github.com/kuma-gzt/sun_position"
 Repository = "https://github.com/kuma-gzt/sun_position"
+
+[project.gui-scripts]
+sun-position = "sun_position.__main__:main"
+
+

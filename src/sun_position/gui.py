@@ -6,8 +6,8 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import datetime
-from algorithms_spa import SunPosition
-from charting import PlotSunPath
+from sun_position.algorithms_spa import SunPosition
+from sun_position.charting import PlotSunPath
 
 
 class SunPathGUI():
