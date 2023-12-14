@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sun-position"
+name = "sun-path-diagrams"
 version = "1.0.0"
 dependencies = [
     "matplotlib>=3.7"
@@ -15,13 +15,15 @@ authors = [
 maintainers = [
   {name = "Leo Guzman", email = "kuma@mailfence.com"}
 ]
-description = "Plots the horizontal and vertical sun-path diagrams"
+description = "Plots the horizontal and vertical sun path diagrams"
 readme = "README.md"
 license = {file = "LICENSE.txt"}
-keywords = ["sun path", "sun position", "sun diagram"]
+keywords = ["sun path", "sun position", "sun diagram", "sun chart"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python"
+    "Programming Language :: Python",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Scientific/Engineering :: Visualization"
 ]
 
 [project.urls]
@@ -29,6 +31,6 @@ Homepage = "https://github.com/kuma-gzt/sun_position"
 Repository = "https://github.com/kuma-gzt/sun_position"
 
 [project.gui-scripts]
-sun-position = "sun_position.__main__:main"
+sun-path-diagrams = "sun_path_diagrams.__main__:main"
 
 

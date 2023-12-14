@@ -2,19 +2,19 @@
 import os
 import csv
 import tkinter as tk
+import datetime
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
-import datetime
-from sun_position.algorithms_spa import SunPosition
-from sun_position.charting import PlotSunPath
+from sun_path_diagrams.algorithms_spa import SunPosition
+from sun_path_diagrams.charting import PlotSunPath
 
 
 class SunPathGUI():
     "GUI dialog for the input of parameters and running of the program"
     def __init__(self):
         self.main_window = tk.Tk()
-        self.main_window.title('Sun Position')
+        self.main_window.title('Sun Path Diagrams')
         self.main_window.resizable(False, False)
         self.main_window.configure(bg='#dcdad5')
 

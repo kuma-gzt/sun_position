@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import math
 from math import degrees as deg
 from math import radians as rad
-import sun_position.tables as tb
+import sun_path_diagrams.tables as tb
 
 
 class SunPosition:

@@ -1,6 +1,6 @@
 "This is the entry point of the package"
 import sys
-from sun_position.gui import SunPathGUI
+from sun_path_diagrams.gui import SunPathGUI
 
 
 def main(args=None):

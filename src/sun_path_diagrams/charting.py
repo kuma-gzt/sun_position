@@ -6,7 +6,7 @@ from math import radians, degrees
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib.ticker import AutoMinorLocator
-import sun_position.config as cfg
+import sun_path_diagrams.config as cfg
 
 
 class PlotSunPath:
